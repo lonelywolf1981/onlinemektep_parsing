@@ -32,12 +32,12 @@ start_url = "https://onlinemektep.org/login"
 driver.get(start_url)
 
 def write_csv(data, name):
-    with open(name, 'w') as f:
+    with open(name, 'a', encoding="utf-8") as f:
         writer = csv.writer(f)
         writer.writerow((data['name'],
-                        data['ex'],
-                        data['price'],
-                        data['total']))
+                        data['status'],
+                        data['procent'],
+                        data['ex_count']))
 
 
 def locator_all(xpath):
@@ -91,26 +91,43 @@ for i in range(len(table)):
    if table[i].get_attribute('data-table-head') == 'Урок':
        buttons.append(table[i].find_element(By.XPATH, "//button[@class='ol-btn ol-w-100 ol-notify-count__wrapper  ol-btn--thm-aqua']"))
 
+
 # Кликаем по кнопкам и собираем страницы с оценками
 pages = []
+
 for i in range(len(buttons)):
     buttons[i].click()
     time.sleep(5)
     tables = driver.find_elements(By.XPATH, "//div[@class='ol-week__tab']")
-    for j in range(len(tables)):
-        print(tables[j].text)
+    tables[0].click()
+    time.sleep(5)
+    pages.append(driver.page_source)
+    driver.back()
+    time.sleep(5)
+    # for j in range(len(table)):
+    #     if table[j].get_attribute('data-table-head') == 'Урок':
+    #         buttons.append(table[i].find_element(By.XPATH, "//button[@class='ol-btn ol-w-100 ol-notify-count__wrapper  ol-btn--thm-aqua']"))
+    buttons = locator_all("//button[@class='ol-btn ol-w-100 ol-notify-count__wrapper  ol-btn--thm-aqua']")
 
-#     pages.append(driver.page_source)
-#     driver.back()
-#
-# print(pages)
+for page in pages:
+    soup = BeautifulSoup(page, 'lxml')
+    trs = soup.find('tbody').find_all('tr')
+    file_name = 'page' + str(i) + '.csv'
+    for tr in trs:
+       tds = tr.find_all('td')
+       for td in tds:
+          name = td.find('span', class_='ol-c-grey')
+          print(name)
+          status = td.find('span', class_='ol-monitoring__status ol-monitoring__status--finished')
+          procent = td.find('span', class_='')
+          ex_count = td.find('span', class_='ol-upper ol-c-green')
+          print(ex_count)
+          data = {'name': name, 'status': status, 'procent': procent, 'ex_count':ex_count}
+          write_csv(data, file_name)
 
+    # name = 'page' + str(i) + '.html'
+    # with open(name, 'w', encoding="utf-8") as f:
+    #     f.write(page)
+    # i += 1
 
-
-
-
-
-
-#buttons = locator_all("//button[@class='ol-btn ol-w-100 ol-notify-count__wrapper  ol-btn--thm-aqua']")
-
-
+driver.close()
